@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <link rel="stylesheet" href="/lib/css/bootstrap.css"/>
+    <link rel="stylesheet" href="/lib/css/index.css"/>
+    <link rel="stylesheet" href="./lib/bootstrap.css"/>
+</head>
+<div class="container">
+    <div class="modal fade" data-show="true" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="panel panel-success">
+                <div class=" panel-heading">
+                    欢迎来到Six Stone's World
+                </div>
+                <form class="panel-body form-inline">
+                    <div class="form-group">
+                        <label for="username" class="control-label">请输入你的名字</label>
+                        <input type="text" id="username" class="form-control" placeholder="your name,please"/>
+                    </div>
+                </form>
+                <div class=" panel-footer">
+                    <button type="button" class="col-md-offset-10 col-sm-offset-10 col-xs-offset-10 btn btn-default btn-success" data-dismiss="modal" id="userJoin">send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+<div class="panel-body pull-left">
+
+    <div class="row" style="width:276px;">
+        <p class="text-info">当前在线人数 <span class="text-danger" id="count"></span>人,分别是 <span class="text-success" id="usermessage"></span></p>
+    </div>
+</div>
+<div class="container" style="width:600px;">
+    <div class="panel panel-success">
+        <div class="panel-heading">
+            <h3 class="text-center">Six Stone's World</h3>
+        </div>
+        <ul class="panel-body " >
+            <ul class="list-group" id="msgList" style="height:450px;overflow-y:scroll;width:554px;overflow-x: hidden;">
+
+            </ul>
+        </ul>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-1" style="position:relative;" id="emotion-package">
+                    <input type="button" class="btn btn-success col-md-offset-1" id="emotion" data-toggle="tooltip" data-placement="left" value="emotion" title="表情动画"/>
+                </div>
+                <div class="col-md-1 col-md-offset-1">
+                    <input type="file" class="col-md-offset-1 pic" id="pic" data-toggle="tooltip" data-placement="left" title="插入图片" value="插入图片"/>
+                </div>
+                <div class="col-md-1 col-md-offset-3">
+                    <input type="color" class="col-md-offset-1 color" id="changeColor" data-toggle="tooltip" data-placement="left" title="文字颜色"/>
+                </div>
+            </div>
+            <hr/>
+            <div class="row">
+                <textarea class="col-md-offset-1 col-sm-offset-1 col-xs-offset-1" name="msg" cols="60" rows="3" id="msg"></textarea>
+                <button class="col-md-1 col-sm-1 col-xs-1 col-md-offset-10  btn btn-success send-btn" id="send">send</button>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<script src="./lib/jquery.js"></script>
+<script src="./lib/bootstrap.min.js"></script>
+<script src="./lib/socket.io.js"></script>
+<script>
+    var Chat={
+        socket:null,
+        username:null,
+        init:function(){
+            var _self  = this;
+            $("#myModal").modal('show');
+
+            _self.socket = io.connect('/');
+            _self.socket.on('connection',function(){});
+            _self.socket.on('disconnect',function(){
+                _self.socket.emit('disconnect',_self.username);
+                _self.username = null;
+            });
+            _self.userMessage();
+            _self.receiveMessage();
+            //将表情包加载入页面中;
+
+
+            //提交用户名
+            $('#userJoin').on('click',_self.joinRoom.bind(this));
+
+//            $("#username").on('keypress',function(e){
+//                var charCode = e.charCode || e.keyCode || e.which;
+//                if(charCode ==13 ){
+//                    $('#userJoin').trigger('click');
+//                }
+//            })        $
+             //
+
+            //给send绑定发送消息;
+            $('#send').on('click',_self.sendMessage.bind(this));
+            //绑定回车发送消息
+            $('#msg').on('keyup',function(e){
+                var charCode = e.charCode || e.keyCode || e.which;
+                if(charCode == 13){
+                    _self.sendMessage();
+                }
+            });
+            //绑定发送图片事件,
+            $('#pic').on('change',_self.sendImage);
+            //加载表情包;
+            _self.loadEif();
+            //点击emotion按钮让表情包显示隐藏
+            $("#emotion").on('click',_self.show);
+            $("body").on('click',".container",_self.hide);
+
+        },
+         //将表情包加载入页面中;
+        loadEif:function(){
+            var _self = this;
+             var oDiv = document.createElement('div');
+             oDiv.className = "emotion-package";
+
+            for(var i= 0,r=8;i<r;i++){
+              var oImg = document.createElement('img');
+              oImg.className = "emotionImg";
+              oImg.src = "/lib/images/monkey"+i+'.gif';
+              oImg.title =oImg.src;
+              oDiv.appendChild(oImg);
+            }
+            document.querySelector("#emotion-package").appendChild(oDiv);
+            $('.emotionImg').on('click',_self.clickEmotion);
+        },
+        //点击按钮让表情包显示;
+        show:function(){
+            if( $('.emotion-package').hasClass('show')){
+                $('.emotion-package').removeClass('show');
+            } else {
+                $('.emotion-package').addClass('show');
+            }
+
+        },
+        //点击按钮让表情包隐藏;
+        hide:function(e){
+            e = e || event;
+            e.target  = e.target || e.srcElement;
+            if(e.target.id !='emotion'){
+                $('.emotion-package').removeClass('show');
+            }
+        },
+
+        //点击单个表情给输入框置入对应的标签tag;
+        clickEmotion:function(e){
+            var title ="[" +e.target.title+"]";
+            var content = $("#msg").val();
+            content = content+title;
+            $("#msg").val(content);
+        },
+        //发送图片,此步骤将图片转换成字符串,仍需要点击send发送;
+        sendImage:function(){
+            var _self  =this;
+            if(this.files.length !=0){
+                var file = this.files[0],
+                    reader = new FileReader();
+                if(!reader){
+                    alert("Sorry:your browser doesn't support fileReader,please change it!");
+                    this.value = "";
+                    return;
+                };
+                reader.onload = function(e){
+                    var m = $('#msg').val();
+                    $('#msg').val(m+"["+e.target.result+"]");
+                    _self.value = "";
+                };
+                reader.readAsDataURL(file)
+            }
+        },
+        //接受聊天信息
+        receiveMessage:function(){
+            var _self = this;
+            //接受聊天信息;接受到的是一个数组，包含所有的公聊信息; ;
+            _self.socket.on('message',function(data){
+                var arr = data;
+                _self.render(arr);
+            });
+        },
+        //发送聊天信息
+        sendMessage:function(){
+            var _self = this;
+            var m = $('#msg').val();
+
+            var message = {};
+            message.name  =_self.username,
+            message.msg = m;
+            message.msg.replace(/</g,"&<");
+            message.msg.replace(/>/g,"&>");
+            _self.socket.emit('message',message);
+            $('#msg').val("")
+        },
+       //当用户与服务器连接时，服务器返回用户列表;显示在线人数列表;
+        userMessage:function(){
+           var _self = this;
+            _self.socket.on('userCount',function(data){
+                 var arr = data;
+                 var userList = arr.map(function(item){
+                     return item.name;
+                 });
+                 $('#count').html(userList.length);
+                 $('#usermessage').html(userList.join(","));
+            })
+        },
+        //判断是否输入用户名进入;当用户输入用户名进入，取消模态框;
+        joinRoom:function(){
+            var _self = this;
+            //将用户信息发给服务器端,关闭模态;
+            _self.username  = $('#username').val();
+            if(_self.username){
+                _self.socket.emit('userCount',_self.username);
+            } else{
+                _self.socket.emit('userLeave',_self.username);
+                io.disconnect();
+                location.reload();
+                _self.username = null;
+            }
+        },
+//        渲染消息框
+        render:function(arr){
+            var _self  = this;
+            var str = '';
+            var fontColor = $("#changeColor").val();
+            for(var i= 0,r=arr.length;i<r;i++){
+               var current = arr[i];
+               var emotionReg = /\[(monkey\d+)\]/g;
+               if(current.msg){
+                   current.msg = current.msg.replace(/\[/g,"<img src='");
+                   current.msg = current.msg.replace(/\]/g,"'/>");
+//                   current.msg = current.msg.replace(/<script>.+<\/script>/g,"'/>","<script>.+<\/script>");
+
+                   str+='<li class="list-group-item"><span class="text-success">'+current.name+'</span>:'+current.msg+'</li>';
+//
+               } else {
+                   str+='<li class="list-group-item"><span class="text-danger">系统</span>&nbsp:&nbsp欢迎 &nbsp<span class="text-success">'+current.name+'</span>&nbsp进入Six Stone\'s World</li>';
+               }
+
+
+           }
+            $('#msgList').css({'color':fontColor});
+
+
+           $('#msgList').html(str);
+            //滾動到滾動條的最底部
+           $('#msgList').scrollTop(document.getElementById('msgList').scrollHeight);
+
+
+        }
+    };
+    Chat.init();
+
+</script>
+</body>
+</html>

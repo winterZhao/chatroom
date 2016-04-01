@@ -1,0 +1,27 @@
+.emotion-package{
+    display:none;
+    position:absolute;
+    top:-170px;
+    width:322px;
+    height:160px;
+    background:#c0c0c0;
+}
+.emotionImg{
+    width:40px;
+    height:40px;
+}
+.show{
+    display:block;
+}
+.send-btn{
+    margin-top:-52px;
+    width:60px;
+}
+.pic{
+    margin-top:6px;
+    margin-left:10px;
+}
+.color{
+    margin-top:5px;
+    margin-left:20px;
+}

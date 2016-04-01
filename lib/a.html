@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<a id="we" href="#">we</a>
+<input class="pic" type="color" style="margin-left:50px;"/>
+
+<button id="btn" style="margin-left:50px;">变色</button>
+<script src="../lib/jquery.js"></script>
+<script>
+    $('#btn').on('click',function(){
+        $('#we').css({'color':'red'});
+    })
+    $('body').on('click',function(e){
+        if($(e.target).attr('id') != "btn"){
+            $('#we').css({'color':'black'});
+        }
+    })
+</script>
+</body>
+</html>
