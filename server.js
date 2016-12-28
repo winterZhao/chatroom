@@ -70,6 +70,6 @@ io.on('disconnect',function(data){
     })
 })
 
-server.listen(70,function(){
+server.listen(204,function(){
     console.log('ok');
 });
